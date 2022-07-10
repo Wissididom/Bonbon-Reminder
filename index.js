@@ -90,7 +90,7 @@ function main() {
 				await client.say(channels[i], process.env.TEXT_MESSAGE);
 			}
 			await client.disconnect();
-			process.exit()
+			process.exit();
 		}).catch(console.error);
 	}).catch((err) => {
 		console.log(`Failed to validate token, refresh token or authenticate! - ${err}`);
