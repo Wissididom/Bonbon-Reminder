@@ -1,171 +1,189 @@
-require("dotenv").config();
-const express = require("express");
-//const fs = require('fs').promises;
-const fs = require("fs");
-const tmi = require("tmi.js");
+import "dotenv/config";
+import * as fs from "fs";
+
+const SCOPES = encodeURIComponent(["user:write:chat"].join(" "));
 
 let tokens = {
-  access_token: "N/A",
-  refresh_token: "N/A",
+  access_token: null,
+  refresh_token: null,
+  device_code: null,
+  user_code: null,
+  verification_uri: null,
+  user_id: null,
 };
 
-function validate(openBrowser = true) {
-  return new Promise((resolve, reject) => {
-    fetch("https://id.twitch.tv/oauth2/validate", {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${tokens.access_token}`,
-      },
-    })
-      .then(async (res) => {
-        if (res.status > 199 && res.status < 300) res = await res.json();
-        if (res.status) {
-          if (res.status == 401) {
-            console.log("Trying to refresh with the refresh token");
-            await fetch(
-              `https://id.twitch.tv/oauth2/token?grant_type=refresh_token&refresh_token=${encodeURIComponent(tokens.refresh_token)}&client_id=${process.env.TWITCH_CLIENT_ID}&client_secret=${process.env.TWITCH_CLIENT_SECRET}`,
-              {
-                method: "POST",
-                headers: {
-                  "Client-ID": process.env.TWITCH_CLIENT_ID,
-                  Authorization: `Bearer ${tokens.access_token}`,
-                },
-              },
-            )
-              .then(async (res) => {
-                if (res.status > 199 && res.status < 300) {
-                  res = await res.json();
-                  tokens = res;
-                  fs.writeFileSync("./.tokens.json", JSON.stringify(res));
-                  console.log(`Tokens saved! - ${JSON.stringify(res)}`);
-                  resolve("Tokens successfully refreshed!");
-                } else {
-                  res = await res.json();
-                  console.log(JSON.stringify(res));
-                  console.log(
-                    "Failed to refresh the token! Try to reauthenticate!",
-                  );
-                  console.log(`Status: ${res.status}`);
-                  console.log(`Error-Message: ${res.message}`);
-                  console.log(
-                    `Open the following Website to authenticate: https://id.twitch.tv/oauth2/authorize?client_id=${process.env.TWITCH_CLIENT_ID}&redirect_uri=http%3A%2F%2Flocalhost%3A${process.env.LOCAL_SERVER_PORT}&response_type=code&scope=chat%3Aread%20chat%3Aedit%20channel%3Amoderate`,
-                  );
-                  if (openBrowser)
-                    require("open")(
-                      `https://id.twitch.tv/oauth2/authorize?client_id=${process.env.TWITCH_CLIENT_ID}&redirect_uri=http%3A%2F%2Flocalhost%3A${process.env.LOCAL_SERVER_PORT}&response_type=code&scope=channel%3Aread%3Apolls%20channel%3Aread%3Apredictions%20channel%3Amanage%3Apolls%20channel%3Amanage%3Apredictions`,
-                    );
-                }
-              })
-              .catch((err) => {
-                console.log(
-                  "Failed to refresh the token! Try to reauthenticate!",
-                );
-                console.error(err);
-                console.log(
-                  `Open the following Website to authenticate: https://id.twitch.tv/oauth2/authorize?client_id=${process.env.TWITCH_CLIENT_ID}&redirect_uri=http%3A%2F%2Flocalhost%3A${process.env.LOCAL_SERVER_PORT}&response_type=code&scope=chat%3Aread%20chat%3Aedit%20channel%3Amoderate`,
-                );
-                if (openBrowser)
-                  require("open")(
-                    `https://id.twitch.tv/oauth2/authorize?client_id=${process.env.TWITCH_CLIENT_ID}&redirect_uri=http%3A%2F%2Flocalhost%3A${process.env.LOCAL_SERVER_PORT}&response_type=code&scope=chat%3Aread%20chat%3Aedit%20channel%3Amoderate`,
-                  );
-              });
-          } else {
-            console.log(`Status: ${res.status}`);
-            console.log(`Error-Message: ${res.message}`);
-            reject("Tokens couldn't be refreshed!");
-          }
+async function sendMessage(broadcasterId, senderId, message, firstTry = true) {
+  let data = {
+    broadcaster_id: broadcasterId,
+    sender_id: senderId,
+    message,
+  };
+  return await fetch("https://api.twitch.tv/helix/chat/messages", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${tokens.access_token}`,
+      "Client-ID": process.env.TWITCH_CLIENT_ID,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
+  }).then(async (res) => {
+    // 200 OK = Successfully sent the message
+    // 400 Bad Request
+    // 401 Unauthorized
+    // 403 Forbidden = The sender is not permitted to send chat messages to the broadcaster’s chat room.
+    // 422 = The message is too large
+    console.log(`${res.status}: ${JSON.stringify(await res.json())}`);
+    if (res.status >= 200 && res.status < 300) {
+      return true;
+    } else {
+      if (firstTry) {
+        if (await refresh()) {
+          return await sendMessage(broadcasterId, senderId, message, false);
         } else {
-          console.log("Validating...");
-          console.log(`Client-ID: ${res.client_id}`);
-          console.log(`Login-Name: ${res.login}`);
-          console.log(`Scopes: ${res.scopes.join(", ")}`);
-          console.log(`User-ID: ${res.user_id}`);
-          console.log(`Expires in: ${res.expires_in} seconds`);
-          resolve("Successfully validated!");
+          return false;
         }
-      })
-      .catch((err) => {
-        reject(`Validation failed! - ${err}`);
-      });
+      } else {
+        return false;
+      }
+    }
   });
 }
 
-function main() {
-  validate()
-    .then(() => {
-      const client = new tmi.Client({
-        options: {
-          debug: true,
+async function getUser(login) {
+  if (login) {
+    return (
+      await fetch(`https://api.twitch.tv/helix/users?login=${login}`, {
+        headers: {
+          "Client-ID": process.env.TWITCH_CLIENT_ID,
+          Authorization: `Bearer ${tokens.access_token}`,
         },
-        identity: {
-          username: process.env.TWITCH_BOT_USERNAME,
-          password: `oauth:${tokens.access_token}`,
+      }).then((res) => res.json())
+    ).data[0];
+  } else {
+    return (
+      await fetch("https://api.twitch.tv/helix/users", {
+        headers: {
+          "Client-ID": process.env.TWITCH_CLIENT_ID,
+          Authorization: `Bearer ${tokens.access_token}`,
         },
-        channels: process.env.TWITCH_CHANNELS.split(","),
-      });
-      client
-        .connect()
-        .then(async () => {
-          let channels = process.env.TWITCH_CHANNELS.split(",");
-          for (let i = 0; i < channels.length; i++) {
-            await client.say(channels[i], process.env.TEXT_MESSAGE);
-          }
-          await client.disconnect();
-          process.exit();
-        })
-        .catch(console.error);
-    })
-    .catch((err) => {
-      console.log(
-        `Failed to validate token, refresh token or authenticate! - ${err}`,
-      );
-      process.kill(process.pid, "SIGTERM");
-    });
+      }).then((res) => res.json())
+    ).data[0];
+  }
 }
 
-const server = express();
-server.all("/", async (req, res) => {
-  const authObj = await fetch(
-    `https://id.twitch.tv/oauth2/token?client_id=${process.env.TWITCH_CLIENT_ID}&client_secret=${process.env.TWITCH_CLIENT_SECRET}&code=${req.query.code}&grant_type=authorization_code&redirect_uri=http%3A%2F%2Flocalhost%3A${process.env.LOCAL_SERVER_PORT}`,
+async function refresh() {
+  console.log("Refreshing tokens...");
+  let refreshResult = await fetch(
+    `https://id.twitch.tv/oauth2/token?grant_type=refresh_token&refresh_token=${encodeURIComponent(tokens.refresh_token)}&client_id=${process.env.TWITCH_CLIENT_ID}&client_secret=${process.env.TWITCH_CLIENT_SECRET}`,
+    {
+      method: "POST",
+      headers: {
+        "Client-ID": process.env.TWITCH_CLIENT_ID,
+        Authorization: `Bearer ${tokens.access_token}`,
+      },
+    },
+  );
+  let refreshJson = await refreshResult.json();
+  if (refreshResult.status >= 200 && refreshResult.status < 300) {
+    // Successfully refreshed
+    tokens.access_token = refreshJson.access_token;
+    tokens.refresh_token = refreshJson.refresh_token;
+    fs.writeFileSync("./.tokens.json", JSON.stringify(tokens));
+    console.log("Successfully refreshed tokens!");
+    return true;
+  } else {
+    // Refreshing failed
+    console.log(`Failed refreshing tokens: ${JSON.stringify(refreshJson)}`);
+    return false;
+  }
+}
+
+async function validate() {
+  return await fetch("https://id.twitch.tv/oauth2/validate", {
+    method: "GET",
+    headers: {
+      "Client-ID": process.env.TWITCH_CLIENT_ID,
+      Authorization: `Bearer ${tokens.access_token}`,
+    },
+  }).then(async (res) => {
+    if (res.status) {
+      if (res.status == 401) {
+        return await refresh();
+      } else if (res.status >= 200 && res.status < 300) {
+        console.log("Successfully validated tokens!");
+        return true;
+      } else {
+        console.error(
+          `Unhandled validation error: ${JSON.stringify(await res.json())}`,
+        );
+        return false;
+      }
+    } else {
+      console.error(
+        `Unhandled network error! res.status is undefined or null! ${res}`,
+      );
+      return false;
+    }
+  });
+}
+
+async function authenticated() {
+  let channels = process.env.TWITCH_CHANNELS.split(",");
+  for (let i = 0; i < channels.length; i++) {
+    await sendMessage(
+      (await getUser(channels[i].toLowerCase())).id,
+      tokens.user_id,
+      process.env.TEXT_MESSAGE,
+    );
+  }
+}
+
+if (fs.existsSync("./.tokens.json")) {
+  tokens = JSON.parse(fs.readFileSync("./.tokens.json"));
+  let validated = await validate();
+  if (validated) {
+    await authenticated();
+  }
+} else {
+  let dcf = await fetch(
+    `https://id.twitch.tv/oauth2/device?client_id=${process.env.TWITCH_CLIENT_ID}&scopes=${SCOPES}`,
     {
       method: "POST",
     },
-  )
-    .then((res) => res.json())
-    .catch((err) => console.error);
-  if (authObj.access_token && authObj.refresh_token) {
-    tokens = authObj;
-    fs.writeFileSync("./.tokens.json", JSON.stringify(authObj));
-    res.send("<html>Tokens saved!</html>");
-    console.log("Tokens saved!");
-    main();
-  } else {
-    res.send("Couldn't get the access token!");
-    console.log("Couldn't get the access token!");
-  }
-});
-
-server.listen(parseInt(process.env.LOCAL_SERVER_PORT), () => {
-  console.log("Express Server ready!");
-});
-
-if (fs.existsSync("./.tokens.json")) {
-  tokens = require("./.tokens.json");
-  if (tokens.access_token && tokens.refresh_token) {
-    main();
-  } else {
+  );
+  if (dcf.status >= 200 && dcf.status < 300) {
+    // Successfully got DCF data
+    let dcfJson = await dcf.json();
+    tokens.device_code = dcfJson.device_code;
+    tokens.user_code = dcfJson.user_code;
+    tokens.verification_uri = dcfJson.verification_uri;
     console.log(
-      `Open the following Website to authenticate: https://id.twitch.tv/oauth2/authorize?client_id=${process.env.TWITCH_CLIENT_ID}&redirect_uri=http%3A%2F%2Flocalhost%3A${process.env.LOCAL_SERVER_PORT}&response_type=code&scope=chat%3Aread%20chat%3Aedit%20channel%3Amoderate`,
-    );
-    require("open")(
-      `https://id.twitch.tv/oauth2/authorize?client_id=${process.env.TWITCH_CLIENT_ID}&redirect_uri=http%3A%2F%2Flocalhost%3A${process.env.LOCAL_SERVER_PORT}&response_type=code&scope=chat%3Aread%20chat%3Aedit%20channel%3Amoderate`,
+      `Open ${tokens.verification_uri} in a browser and enter ${tokens.user_code} there!`,
     );
   }
-} else {
-  console.log(
-    `Open the following Website to authenticate: https://id.twitch.tv/oauth2/authorize?client_id=${process.env.TWITCH_CLIENT_ID}&redirect_uri=http%3A%2F%2Flocalhost%3A${process.env.LOCAL_SERVER_PORT}&response_type=code&scope=chat%3Aread%20chat%3Aedit%20channel%3Amoderate`,
-  );
-  require("open")(
-    `https://id.twitch.tv/oauth2/authorize?client_id=${process.env.TWITCH_CLIENT_ID}&redirect_uri=http%3A%2F%2Flocalhost%3A${process.env.LOCAL_SERVER_PORT}&response_type=code&scope=chat%3Aread%20chat%3Aedit%20channel%3Amoderate`,
-  );
+  let dcfInterval = setInterval(async () => {
+    let tokenResponse = await fetch(
+      `https://id.twitch.tv/oauth2/token?client_id=${process.env.TWITCH_CLIENT_ID}&scopes=${encodeURIComponent(SCOPES)}&device_code=${tokens.device_code}&grant_type=urn:ietf:params:oauth:grant-type:device_code`,
+      {
+        method: "POST",
+      },
+    );
+    if (tokenResponse.status == 400) return; // Probably authorization pending
+    if (tokenResponse.status >= 200 && tokenResponse.status < 300) {
+      // Successfully got token
+      let tokenJson = await tokenResponse.json();
+      tokens.access_token = tokenJson.access_token;
+      tokens.refresh_token = tokenJson.refresh_token;
+      let user = await getUser();
+      tokens.user_id = user.id;
+      fs.writeFileSync("./.tokens.json", JSON.stringify(tokens), {
+        encoding: "utf8",
+      });
+      clearInterval(dcfInterval);
+      console.log(
+        `Got Device Code Flow Tokens for ${user.display_name} (${user.login})`,
+      );
+      await authenticated();
+    }
+  }, 1000);
 }
