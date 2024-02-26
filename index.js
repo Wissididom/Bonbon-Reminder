@@ -32,7 +32,7 @@ async function sendMessage(broadcasterId, senderId, message, firstTry = true) {
     // 401 Unauthorized
     // 403 Forbidden = The sender is not permitted to send chat messages to the broadcaster’s chat room.
     // 422 = The message is too large
-    console.log(`${res.status}: ${JSON.stringify(await res.json())}`);
+    console.log(`${res.status}:\n${JSON.stringify(await res.json(), null, 2)}`);
     if (res.status >= 200 && res.status < 300) {
       return true;
     } else {
@@ -50,29 +50,19 @@ async function sendMessage(broadcasterId, senderId, message, firstTry = true) {
 }
 
 async function getUser(login) {
-  if (login) {
-    return (
-      await fetch(`https://api.twitch.tv/helix/users?login=${login}`, {
-        headers: {
-          "Client-ID": process.env.TWITCH_CLIENT_ID,
-          Authorization: `Bearer ${tokens.access_token}`,
-        },
-      }).then((res) => res.json())
-    ).data[0];
-  } else {
-    return (
-      await fetch("https://api.twitch.tv/helix/users", {
-        headers: {
-          "Client-ID": process.env.TWITCH_CLIENT_ID,
-          Authorization: `Bearer ${tokens.access_token}`,
-        },
-      }).then((res) => res.json())
-    ).data[0];
-  }
+  let apiUrl = login
+    ? `https://api.twitch.tv/helix/users?login=${login}`
+    : `https://api.twitch.tv/helix/users`;
+  let userResponse = await fetch(apiUrl, {
+    headers: {
+      "Client-ID": process.env.TWITCH_CLIENT_ID,
+      Authorization: `Bearer ${tokens.access_token}`,
+    },
+  }).then((res) => res.json());
+  return userResponse.data[0];
 }
 
 async function refresh() {
-  console.log("Refreshing tokens...");
   let refreshResult = await fetch(
     `https://id.twitch.tv/oauth2/token?grant_type=refresh_token&refresh_token=${encodeURIComponent(tokens.refresh_token)}&client_id=${process.env.TWITCH_CLIENT_ID}&client_secret=${process.env.TWITCH_CLIENT_SECRET}`,
     {
@@ -98,35 +88,6 @@ async function refresh() {
   }
 }
 
-async function validate() {
-  return await fetch("https://id.twitch.tv/oauth2/validate", {
-    method: "GET",
-    headers: {
-      "Client-ID": process.env.TWITCH_CLIENT_ID,
-      Authorization: `Bearer ${tokens.access_token}`,
-    },
-  }).then(async (res) => {
-    if (res.status) {
-      if (res.status == 401) {
-        return await refresh();
-      } else if (res.status >= 200 && res.status < 300) {
-        console.log("Successfully validated tokens!");
-        return true;
-      } else {
-        console.error(
-          `Unhandled validation error: ${JSON.stringify(await res.json())}`,
-        );
-        return false;
-      }
-    } else {
-      console.error(
-        `Unhandled network error! res.status is undefined or null! ${res}`,
-      );
-      return false;
-    }
-  });
-}
-
 async function authenticated() {
   let channels = process.env.TWITCH_CHANNELS.split(",");
   for (let i = 0; i < channels.length; i++) {
@@ -140,10 +101,7 @@ async function authenticated() {
 
 if (fs.existsSync("./.tokens.json")) {
   tokens = JSON.parse(fs.readFileSync("./.tokens.json"));
-  let validated = await validate();
-  if (validated) {
-    await authenticated();
-  }
+  await authenticated();
 } else {
   let dcf = await fetch(
     `https://id.twitch.tv/oauth2/device?client_id=${process.env.TWITCH_CLIENT_ID}&scopes=${SCOPES}`,
