@@ -49,7 +49,7 @@ async function sendMessage(broadcasterId, senderId, message, firstTry = true) {
   });
 }
 
-async function getUser(login) {
+async function getUser(login, firstTry = true) {
   let apiUrl = login
     ? `https://api.twitch.tv/helix/users?login=${login}`
     : `https://api.twitch.tv/helix/users`;
@@ -59,7 +59,18 @@ async function getUser(login) {
       Authorization: `Bearer ${tokens.access_token}`,
     },
   }).then((res) => res.json());
-  return userResponse.data[0];
+  if (!userResponse.data) {
+    if (firstTry) {
+      if (await refresh()) {
+        return getUser(login, false);
+      } else {
+        console.log("Failed to refresh token!");
+      }
+    } else {
+      console.log("Failed to get user in the second attempt!");
+    }
+  }
+  return userResponse.data?.[0];
 }
 
 async function refresh() {
@@ -91,11 +102,8 @@ async function refresh() {
 async function authenticated() {
   let channels = process.env.TWITCH_CHANNELS.split(",");
   for (let i = 0; i < channels.length; i++) {
-    await sendMessage(
-      (await getUser(channels[i].toLowerCase())).id,
-      tokens.user_id,
-      process.env.TEXT_MESSAGE,
-    );
+    let user = await getUser(channels[i].toLowerCase());
+    await sendMessage(user.id, tokens.user_id, process.env.TEXT_MESSAGE);
   }
 }
 
