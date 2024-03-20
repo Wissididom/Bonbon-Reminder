@@ -60,5 +60,9 @@ if (clientCredentials.status >= 200 && clientCredentials.status < 300) {
 }
 let channels = process.env.TWITCH_CHANNEL_IDS.split(",");
 for (let i = 0; i < channels.length; i++) {
-  await sendMessage(channels[i], process.env.SENDER_ID, process.env.TEXT_MESSAGE);
+  await sendMessage(
+    channels[i],
+    process.env.SENDER_ID,
+    process.env.TEXT_MESSAGE,
+  );
 }
