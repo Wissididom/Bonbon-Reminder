@@ -1,18 +1,14 @@
 import "dotenv/config";
-import * as fs from "fs";
+import { getUser as getUserImpl } from "./utils.js";
 
-const SCOPES = encodeURIComponent(["user:write:chat"].join(" "));
-
-let tokens = {
+let token = {
   access_token: null,
-  refresh_token: null,
-  device_code: null,
-  user_code: null,
-  verification_uri: null,
-  user_id: null,
+  expires_in: null,
+  token_type: null,
 };
 
-async function sendMessage(broadcasterId, senderId, message, firstTry = true) {
+// https://dev.twitch.tv/docs/api/reference/#send-chat-message
+async function sendMessage(broadcasterId, senderId, message) {
   let data = {
     broadcaster_id: broadcasterId,
     sender_id: senderId,
@@ -38,120 +34,32 @@ async function sendMessage(broadcasterId, senderId, message, firstTry = true) {
     if (res.status >= 200 && res.status < 300) {
       return true;
     } else {
-      if (firstTry) {
-        if (await refresh()) {
-          return await sendMessage(broadcasterId, senderId, message, false);
-        } else {
-          return false;
-        }
-      } else {
-        return false;
-      }
+      return false;
     }
   });
 }
 
-async function getUser(login, firstTry = true) {
-  let apiUrl = login
-    ? `https://api.twitch.tv/helix/users?login=${login}`
-    : `https://api.twitch.tv/helix/users`;
-  let userResponse = await fetch(apiUrl, {
-    headers: {
-      "Client-ID": process.env.TWITCH_CLIENT_ID,
-      Authorization: `Bearer ${tokens.access_token}`,
-    },
-  }).then((res) => res.json());
-  if (!userResponse.data) {
-    if (firstTry) {
-      if (await refresh()) {
-        return getUser(login, false);
-      } else {
-        console.log("Failed to refresh token!");
-      }
-    } else {
-      console.log("Failed to get user in the second attempt!");
-    }
-  }
-  return userResponse.data?.[0];
+async function getUser(login) {
+  return getUserImpl(process.env.TWITCH_CLIENT_ID, tokens.access_token, login);
 }
 
-async function refresh() {
-  let refreshResult = await fetch(
-    `https://id.twitch.tv/oauth2/token?grant_type=refresh_token&refresh_token=${encodeURIComponent(tokens.refresh_token)}&client_id=${process.env.TWITCH_CLIENT_ID}&client_secret=${process.env.TWITCH_CLIENT_SECRET}`,
-    {
-      method: "POST",
-      headers: {
-        "Client-ID": process.env.TWITCH_CLIENT_ID,
-        Authorization: `Bearer ${tokens.access_token}`,
-      },
-    },
-  );
-  let refreshJson = await refreshResult.json();
-  if (refreshResult.status >= 200 && refreshResult.status < 300) {
-    // Successfully refreshed
-    tokens.access_token = refreshJson.access_token;
-    tokens.refresh_token = refreshJson.refresh_token;
-    fs.writeFileSync("./.tokens.json", JSON.stringify(tokens));
-    console.log("Successfully refreshed tokens!");
-    return true;
-  } else {
-    // Refreshing failed
-    console.log(`Failed refreshing tokens: ${JSON.stringify(refreshJson)}`);
-    return false;
-  }
+// https://dev.twitch.tv/docs/authentication/getting-tokens-oauth/#client-credentials-grant-flow
+let clientCredentials = await fetch(
+  `https://id.twitch.tv/oauth2/token?client_id=${process.env.TWITCH_CLIENT_ID}&client_secret=${process.env.TWITCH_CLIENT_SECRET}&grant_type=client_credentials`,
+  {
+    method: "POST",
+  },
+);
+if (clientCredentials.status >= 200 && clientCredentials.status < 300) {
+  let clientCredentialsJson = await clientCredentials.json();
+  token = {
+    access_token: clientCredentialsJson.access_token,
+    expires_in: clientCredentialsJson.expires_in,
+    token_type: clientCredentialsJson.token_type,
+  };
 }
-
-async function authenticated() {
-  let channels = process.env.TWITCH_CHANNELS.split(",");
-  for (let i = 0; i < channels.length; i++) {
-    let user = await getUser(channels[i].toLowerCase());
-    await sendMessage(user.id, tokens.user_id, process.env.TEXT_MESSAGE);
-  }
-}
-
-if (fs.existsSync("./.tokens.json")) {
-  tokens = JSON.parse(fs.readFileSync("./.tokens.json"));
-  await authenticated();
-} else {
-  let dcf = await fetch(
-    `https://id.twitch.tv/oauth2/device?client_id=${process.env.TWITCH_CLIENT_ID}&scopes=${SCOPES}`,
-    {
-      method: "POST",
-    },
-  );
-  if (dcf.status >= 200 && dcf.status < 300) {
-    // Successfully got DCF data
-    let dcfJson = await dcf.json();
-    tokens.device_code = dcfJson.device_code;
-    tokens.user_code = dcfJson.user_code;
-    tokens.verification_uri = dcfJson.verification_uri;
-    console.log(
-      `Open ${tokens.verification_uri} in a browser and enter ${tokens.user_code} there!`,
-    );
-  }
-  let dcfInterval = setInterval(async () => {
-    let tokenResponse = await fetch(
-      `https://id.twitch.tv/oauth2/token?client_id=${process.env.TWITCH_CLIENT_ID}&scopes=${encodeURIComponent(SCOPES)}&device_code=${tokens.device_code}&grant_type=urn:ietf:params:oauth:grant-type:device_code`,
-      {
-        method: "POST",
-      },
-    );
-    if (tokenResponse.status == 400) return; // Probably authorization pending
-    if (tokenResponse.status >= 200 && tokenResponse.status < 300) {
-      // Successfully got token
-      let tokenJson = await tokenResponse.json();
-      tokens.access_token = tokenJson.access_token;
-      tokens.refresh_token = tokenJson.refresh_token;
-      let user = await getUser();
-      tokens.user_id = user.id;
-      fs.writeFileSync("./.tokens.json", JSON.stringify(tokens), {
-        encoding: "utf8",
-      });
-      clearInterval(dcfInterval);
-      console.log(
-        `Got Device Code Flow Tokens for ${user.display_name} (${user.login})`,
-      );
-      await authenticated();
-    }
-  }, 1000);
+let channels = process.env.TWITCH_CHANNELS.split(",");
+for (let i = 0; i < channels.length; i++) {
+  let user = await getUser(channels[i].toLowerCase());
+  await sendMessage(user.id, process.env.SENDER_ID, process.env.TEXT_MESSAGE);
 }
