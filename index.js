@@ -17,7 +17,7 @@ async function sendMessage(broadcasterId, senderId, message) {
   return await fetch("https://api.twitch.tv/helix/chat/messages", {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${tokens.access_token}`,
+      Authorization: `Bearer ${token.access_token}`,
       "Client-ID": process.env.TWITCH_CLIENT_ID,
       "Content-Type": "application/json",
     },
@@ -40,7 +40,7 @@ async function sendMessage(broadcasterId, senderId, message) {
 }
 
 async function getUser(login) {
-  return getUserImpl(process.env.TWITCH_CLIENT_ID, tokens.access_token, login);
+  return getUserImpl(process.env.TWITCH_CLIENT_ID, token.access_token, login);
 }
 
 // https://dev.twitch.tv/docs/authentication/getting-tokens-oauth/#client-credentials-grant-flow
@@ -58,8 +58,7 @@ if (clientCredentials.status >= 200 && clientCredentials.status < 300) {
     token_type: clientCredentialsJson.token_type,
   };
 }
-let channels = process.env.TWITCH_CHANNELS.split(",");
+let channels = process.env.TWITCH_CHANNEL_IDS.split(",");
 for (let i = 0; i < channels.length; i++) {
-  let user = await getUser(channels[i].toLowerCase());
-  await sendMessage(user.id, process.env.SENDER_ID, process.env.TEXT_MESSAGE);
+  await sendMessage(channels[i], process.env.SENDER_ID, process.env.TEXT_MESSAGE);
 }
