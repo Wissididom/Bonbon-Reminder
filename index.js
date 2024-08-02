@@ -1,6 +1,24 @@
 import "dotenv/config";
 import { getUser as getUserImpl } from "./utils.js";
 
+async function sendDiscordWebhookMessage(content) {
+  return fetch(`${process.env.DISCORD_LOG_WEBHOOK}?wait=true`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      content,
+      allowed_mentions: { parse: [] },
+    }),
+  });
+}
+
+async function log(message) {
+  console.log(message);
+  return await sendDiscordWebhookMessage(`\`\`\`\n${message}\n\`\`\``);
+}
+
 let token = {
   access_token: null,
   expires_in: null,
@@ -28,7 +46,7 @@ async function sendMessage(broadcasterId, senderId, message) {
     // 401 Unauthorized
     // 403 Forbidden = The sender is not permitted to send chat messages to the broadcaster’s chat room.
     // 422 = The message is too large
-    console.log(
+    log(
       `${res.status}: ${senderId} -> ${broadcasterId}\n${JSON.stringify(await res.json(), null, 2)}`,
     );
     if (res.status >= 200 && res.status < 300) {
