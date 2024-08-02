@@ -46,7 +46,7 @@ async function sendMessage(broadcasterId, senderId, message) {
     // 401 Unauthorized
     // 403 Forbidden = The sender is not permitted to send chat messages to the broadcaster’s chat room.
     // 422 = The message is too large
-    log(
+    await log(
       `${res.status}: ${senderId} -> ${broadcasterId}\n${JSON.stringify(await res.json(), null, 2)}`,
     );
     if (res.status >= 200 && res.status < 300) {
@@ -84,3 +84,11 @@ for (let i = 0; i < channels.length; i++) {
     process.env.TEXT_MESSAGE,
   );
 }
+
+process.on("unhandledRejection", async (reason, promise) => {
+  if (!(reason instanceof Error)) {
+    await log(reason);
+  } else {
+    await log(`${reason.message}\n${reason.stack}`);
+  }
+});
