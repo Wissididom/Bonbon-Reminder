@@ -2,6 +2,9 @@ import "dotenv/config";
 import { getUser as getUserImpl } from "./utils.js";
 
 async function sendDiscordWebhookMessage(content) {
+  if (!process.env.DISCORD_LOG_WEBHOOK) {
+    return; // No Webhook URL set, can't send Discord webhook message
+  }
   return fetch(`${process.env.DISCORD_LOG_WEBHOOK}?wait=true`, {
     method: "POST",
     headers: {
