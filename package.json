@@ -13,7 +13,8 @@
   "author": "Wissididom",
   "license": "MIT",
   "dependencies": {
-    "dotenv": "^16.4.5"
+    "dotenv": "^16.4.5",
+    "node-cron": "^3.0.3"
   },
   "devDependencies": {
     "prettier": "^3.3.3"
