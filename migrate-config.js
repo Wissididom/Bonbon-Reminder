@@ -24,9 +24,9 @@ function runMigration(cron) {
   config.push(configObject);
 
   fs.writeFileSync(".config.json", JSON.stringify(config, null, 2));
-  console.log(JSON.stringify(config, null, 2));
+  console.log(JSON.stringify(config, null, 2) + "\n");
 
-  const newEnv = `TWITCH_CLIENT_ID=${process.env.TWITCH_CLIENT_ID ?? "[0-9a-z]"}\nTWITCH_CLIENT_SECRET=${process.env.TWITCH_CLIENT_SECRET ?? "[0-9a-z]"}`;
+  const newEnv = `TWITCH_CLIENT_ID=${process.env.TWITCH_CLIENT_ID ?? "[0-9a-z]"}\nTWITCH_CLIENT_SECRET=${process.env.TWITCH_CLIENT_SECRET ?? "[0-9a-z]"}\n`;
 
   fs.writeFileSync(".env", newEnv);
   console.log(newEnv);
