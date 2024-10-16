@@ -1,0 +1,9 @@
+[
+  {
+    "channelIds": ["[0-9]+"],
+    "cron": "0 0 7 * * *",
+    "timezone": "Europe/Berlin",
+    "senderId": "[0-9]+",
+    "textMessage": "@User Es ist Zeit für deine Bonbons"
+  }
+]

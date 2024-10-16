@@ -1,5 +1,6 @@
 import "dotenv/config";
-import { getUser as getUserImpl } from "./utils.js";
+import fs from "node:fs";
+import cron from "node-cron";
 
 let token = {
   access_token: null,
@@ -39,30 +40,43 @@ async function sendMessage(broadcasterId, senderId, message) {
   });
 }
 
-async function getUser(login) {
-  return getUserImpl(process.env.TWITCH_CLIENT_ID, token.access_token, login);
+async function handleReminder(channelIds, senderId, textMessage) {
+  // https://dev.twitch.tv/docs/authentication/getting-tokens-oauth/#client-credentials-grant-flow
+  let clientCredentials = await fetch(
+    `https://id.twitch.tv/oauth2/token?client_id=${process.env.TWITCH_CLIENT_ID}&client_secret=${process.env.TWITCH_CLIENT_SECRET}&grant_type=client_credentials`,
+    {
+      method: "POST",
+    },
+  );
+  if (clientCredentials.status >= 200 && clientCredentials.status < 300) {
+    let clientCredentialsJson = await clientCredentials.json();
+    token = {
+      access_token: clientCredentialsJson.access_token,
+      expires_in: clientCredentialsJson.expires_in,
+      token_type: clientCredentialsJson.token_type,
+    };
+  }
+  for (let i = 0; i < channelIds.length; i++) {
+    await sendMessage(channelIds[i], senderId, textMessage);
+  }
 }
 
-// https://dev.twitch.tv/docs/authentication/getting-tokens-oauth/#client-credentials-grant-flow
-let clientCredentials = await fetch(
-  `https://id.twitch.tv/oauth2/token?client_id=${process.env.TWITCH_CLIENT_ID}&client_secret=${process.env.TWITCH_CLIENT_SECRET}&grant_type=client_credentials`,
-  {
-    method: "POST",
-  },
-);
-if (clientCredentials.status >= 200 && clientCredentials.status < 300) {
-  let clientCredentialsJson = await clientCredentials.json();
-  token = {
-    access_token: clientCredentialsJson.access_token,
-    expires_in: clientCredentialsJson.expires_in,
-    token_type: clientCredentialsJson.token_type,
-  };
-}
-let channels = process.env.TWITCH_CHANNEL_IDS.split(",");
-for (let i = 0; i < channels.length; i++) {
-  await sendMessage(
-    channels[i],
-    process.env.SENDER_ID,
-    process.env.TEXT_MESSAGE,
+const config = JSON.parse(fs.readFileSync(".config.json"));
+
+for (let reminder of config) {
+  console.log("Schedule job: " + JSON.stringify(reminder));
+  cron.schedule(
+    reminder.cron,
+    async () => {
+      await handleReminder(
+        reminder.channelIds,
+        reminder.senderId,
+        reminder.textMessage,
+      );
+    },
+    {
+      scheduled: true,
+      timezone: reminder.timezone,
+    },
   );
 }
