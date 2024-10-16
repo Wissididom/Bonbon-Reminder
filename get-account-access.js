@@ -11,6 +11,7 @@ export default async function getAccountAccess(chatter) {
   } else {
     scopes = encodeURIComponent(["channel:bot"].join(" "));
   }
+  console.log(`Scopes: ${scopes}`);
   let tokens = {
     access_token: null,
     refresh_token: null,
