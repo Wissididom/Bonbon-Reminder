@@ -1,0 +1,8 @@
+{
+  "tasks": {
+    "dev": "deno run --watch main.ts"
+  },
+  "imports": {
+    "node-cron": "npm:node-cron@^3.0.3"
+  }
+}
