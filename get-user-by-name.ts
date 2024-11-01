@@ -9,7 +9,11 @@ let token = {
 };
 
 async function getUser(login) {
-  return await getUserImpl(process.env.TWITCH_CLIENT_ID, token.access_token, login);
+  return await getUserImpl(
+    process.env.TWITCH_CLIENT_ID,
+    token.access_token,
+    login,
+  );
 }
 
 async function getToken() {

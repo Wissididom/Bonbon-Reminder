@@ -30,7 +30,9 @@ async function sendMessage(broadcasterId, senderId, message) {
     // 403 Forbidden = The sender is not permitted to send chat messages to the broadcaster’s chat room.
     // 422 = The message is too large
     console.log(
-      `${res.status}: ${senderId} -> ${broadcasterId}\n${JSON.stringify(await res.json(), null, 2)}`,
+      `${res.status}: ${senderId} -> ${broadcasterId}\n${
+        JSON.stringify(await res.json(), null, 2)
+      }`,
     );
     if (res.status >= 200 && res.status < 300) {
       return true;

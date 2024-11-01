@@ -2,7 +2,11 @@ import process from "node:process";
 import { getUser as getUserImpl } from "./utils.ts";
 
 async function getUser(tokens, login) {
-  return await getUserImpl(process.env.TWITCH_CLIENT_ID, tokens.access_token, login);
+  return await getUserImpl(
+    process.env.TWITCH_CLIENT_ID,
+    tokens.access_token,
+    login,
+  );
 }
 
 export default async function getAccountAccess(chatter) {
@@ -38,7 +42,9 @@ export default async function getAccountAccess(chatter) {
   }
   const dcfInterval = setInterval(async () => {
     const tokenResponse = await fetch(
-      `https://id.twitch.tv/oauth2/token?client_id=${process.env.TWITCH_CLIENT_ID}&scopes=${encodeURIComponent(scopes)}&device_code=${tokens.device_code}&grant_type=urn:ietf:params:oauth:grant-type:device_code`,
+      `https://id.twitch.tv/oauth2/token?client_id=${process.env.TWITCH_CLIENT_ID}&scopes=${
+        encodeURIComponent(scopes)
+      }&device_code=${tokens.device_code}&grant_type=urn:ietf:params:oauth:grant-type:device_code`,
       {
         method: "POST",
       },
@@ -52,7 +58,9 @@ export default async function getAccountAccess(chatter) {
       const user = await getUser(tokens);
       clearInterval(dcfInterval);
       console.log(
-        `Got Device Code Flow Tokens for ${chatter ? "Chatter" : "Streamer"} ${user.display_name} (${user.login})`,
+        `Got Device Code Flow Tokens for ${
+          chatter ? "Chatter" : "Streamer"
+        } ${user.display_name} (${user.login})`,
       );
     }
   }, 1000);
