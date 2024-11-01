@@ -1,5 +1,5 @@
-import "dotenv/config";
 import fs from "node:fs";
+import process from "node:process";
 import readline from "node:readline";
 
 function readConfigIfExists(filePath) {

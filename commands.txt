@@ -1,0 +1,5 @@
+deno run --env -ERWN main.ts
+deno run --env -EN get-streamer-access.ts
+deno run --env -EN get-chatter-access.ts
+deno run --env -EN get-user-by-name.ts
+deno run --env -EN migrate-config.ts
