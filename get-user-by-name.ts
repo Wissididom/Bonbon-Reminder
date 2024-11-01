@@ -1,6 +1,6 @@
-import "dotenv/config";
-import * as readline from "readline";
-import { getUser as getUserImpl } from "./utils.js";
+import process from "node:process";
+import * as readline from "node:readline";
+import { getUser as getUserImpl } from "./utils.ts";
 
 let token = {
   access_token: null,
@@ -9,18 +9,18 @@ let token = {
 };
 
 async function getUser(login) {
-  return getUserImpl(process.env.TWITCH_CLIENT_ID, token.access_token, login);
+  return await getUserImpl(process.env.TWITCH_CLIENT_ID, token.access_token, login);
 }
 
 async function getToken() {
-  let clientCredentials = await fetch(
+  const clientCredentials = await fetch(
     `https://id.twitch.tv/oauth2/token?client_id=${process.env.TWITCH_CLIENT_ID}&client_secret=${process.env.TWITCH_CLIENT_SECRET}&grant_type=client_credentials`,
     {
       method: "POST",
     },
   );
   if (clientCredentials.status >= 200 && clientCredentials.status < 300) {
-    let clientCredentialsJson = await clientCredentials.json();
+    const clientCredentialsJson = await clientCredentials.json();
     token = {
       access_token: clientCredentialsJson.access_token,
       expires_in: clientCredentialsJson.expires_in,
@@ -38,7 +38,7 @@ readlineInterface.question(
   "Enter the User whose Data you want to retrieve: ",
   async (user) => {
     await getToken();
-    let userData = await getUser(user.toLowerCase());
+    const userData = await getUser(user.toLowerCase());
     console.log(userData);
     readlineInterface.close();
   },
