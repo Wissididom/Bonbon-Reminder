@@ -1,6 +1,4 @@
-import process from "node:process";
-import fs from "node:fs";
-import cron from "node-cron";
+import { schedule } from "node-cron";
 
 let token = {
   access_token: null,
@@ -9,7 +7,11 @@ let token = {
 };
 
 // https://dev.twitch.tv/docs/api/reference/#send-chat-message
-async function sendMessage(broadcasterId, senderId, message) {
+async function sendMessage(
+  broadcasterId: string,
+  senderId: string,
+  message: string,
+) {
   const data = {
     broadcaster_id: broadcasterId,
     sender_id: senderId,
@@ -19,7 +21,7 @@ async function sendMessage(broadcasterId, senderId, message) {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token.access_token}`,
-      "Client-ID": process.env.TWITCH_CLIENT_ID,
+      "Client-ID": Deno.env.get("TWITCH_CLIENT_ID"),
       "Content-Type": "application/json",
     },
     body: JSON.stringify(data),
@@ -42,10 +44,18 @@ async function sendMessage(broadcasterId, senderId, message) {
   });
 }
 
-async function handleReminder(channelIds, senderId, textMessage) {
+async function handleReminder(
+  channelIds: string[],
+  senderId: string,
+  textMessage: string,
+) {
   // https://dev.twitch.tv/docs/authentication/getting-tokens-oauth/#client-credentials-grant-flow
   const clientCredentials = await fetch(
-    `https://id.twitch.tv/oauth2/token?client_id=${process.env.TWITCH_CLIENT_ID}&client_secret=${process.env.TWITCH_CLIENT_SECRET}&grant_type=client_credentials`,
+    `https://id.twitch.tv/oauth2/token?client_id=${
+      Deno.env.get("TWITCH_CLIENT_ID")
+    }&client_secret=${
+      Deno.env.get("TWITCH_CLIENT_SECRET")
+    }&grant_type=client_credentials`,
     {
       method: "POST",
     },
@@ -63,11 +73,11 @@ async function handleReminder(channelIds, senderId, textMessage) {
   }
 }
 
-const config = JSON.parse(fs.readFileSync(".config.json"));
+const config = JSON.parse(await Deno.readTextFile(".config.json"));
 
 for (const reminder of config) {
   console.log("Schedule job: " + JSON.stringify(reminder));
-  cron.schedule(
+  schedule(
     reminder.cron,
     async () => {
       await handleReminder(
