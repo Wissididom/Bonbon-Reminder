@@ -1,3 +1,3 @@
-import getAccountAccess from "./get-account-access.js";
+import getAccountAccess from "./get-account-access.ts";
 
 await getAccountAccess(true);
