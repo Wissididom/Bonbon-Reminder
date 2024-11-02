@@ -21,7 +21,7 @@ async function sendMessage(
     method: "POST",
     headers: {
       Authorization: `Bearer ${token.access_token}`,
-      "Client-ID": Deno.env.get("TWITCH_CLIENT_ID"),
+      "Client-ID": Deno.env.get("TWITCH_CLIENT_ID")!,
       "Content-Type": "application/json",
     },
     body: JSON.stringify(data),
