@@ -1,4 +1,8 @@
-export async function getUser(clientId, accessToken, login) {
+export async function getUser(
+  clientId: string,
+  accessToken: string,
+  login: string | null,
+) {
   const apiUrl = login
     ? `https://api.twitch.tv/helix/users?login=${login}`
     : `https://api.twitch.tv/helix/users`;

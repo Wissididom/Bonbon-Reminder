@@ -1,15 +1,15 @@
 import { getUser as getUserImpl } from "./utils.ts";
 
-async function getUser(tokens, login) {
+async function getUser(access_token: string, login: string | null) {
   return await getUserImpl(
-    Deno.env.get("TWITCH_CLIENT_ID"),
-    tokens.access_token,
+    Deno.env.get("TWITCH_CLIENT_ID")!,
+    access_token,
     login,
   );
 }
 
-export default async function getAccountAccess(chatter) {
-  let scopes;
+export default async function getAccountAccess(chatter: boolean) {
+  let scopes: string;
   if (chatter) {
     scopes = encodeURIComponent(["user:write:chat", "user:bot"].join(" "));
   } else {
@@ -20,6 +20,7 @@ export default async function getAccountAccess(chatter) {
     access_token: null,
     refresh_token: null,
     device_code: null,
+    user_code: null,
     verification_uri: null,
     user_id: null,
   };
@@ -58,7 +59,7 @@ export default async function getAccountAccess(chatter) {
       const tokenJson = await tokenResponse.json();
       tokens.access_token = tokenJson.access_token;
       tokens.refresh_token = tokenJson.refresh_token;
-      const user = await getUser(tokens);
+      const user = await getUser(tokens.access_token!, null);
       clearInterval(dcfInterval);
       console.log(
         `Got Device Code Flow Tokens for ${
