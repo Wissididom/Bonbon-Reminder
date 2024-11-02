@@ -1,15 +1,9 @@
 import { getUser as getUserImpl } from "./utils.ts";
 
-let token = {
-  access_token: null,
-  expires_in: null,
-  token_type: null,
-};
-
-async function getUser(login) {
+async function getUser(access_token: string, login: string | null) {
   return await getUserImpl(
-    Deno.env.get("TWITCH_CLIENT_ID"),
-    token.access_token,
+    Deno.env.get("TWITCH_CLIENT_ID")!,
+    access_token,
     login,
   );
 }
@@ -27,16 +21,29 @@ async function getToken() {
   );
   if (clientCredentials.status >= 200 && clientCredentials.status < 300) {
     const clientCredentialsJson = await clientCredentials.json();
-    token = {
+    const token = {
       access_token: clientCredentialsJson.access_token,
       expires_in: clientCredentialsJson.expires_in,
       token_type: clientCredentialsJson.token_type,
     };
     return token;
   }
+  return null;
 }
 
-const user = prompt("Enter the User whose Data you want to retrieve: ");
-await getToken();
-const userData = await getUser(user.toLowerCase());
-console.log(userData);
+async function handle() {
+  const user = prompt("Enter the User whose Data you want to retrieve: ");
+  if (!user) {
+    // Probably cancelled prompt, I guess
+    return;
+  }
+  const token = await getToken();
+  if (!token) {
+    console.log("token is null, failed to get token");
+    return;
+  }
+  const userData = await getUser(token.access_token, user.toLowerCase());
+  console.log(userData);
+}
+
+await handle();
