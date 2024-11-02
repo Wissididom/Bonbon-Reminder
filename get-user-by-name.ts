@@ -1,5 +1,3 @@
-import process from "node:process";
-import * as readline from "node:readline";
 import { getUser as getUserImpl } from "./utils.ts";
 
 let token = {
@@ -10,7 +8,7 @@ let token = {
 
 async function getUser(login) {
   return await getUserImpl(
-    process.env.TWITCH_CLIENT_ID,
+    Deno.env.get("TWITCH_CLIENT_ID"),
     token.access_token,
     login,
   );
@@ -18,7 +16,11 @@ async function getUser(login) {
 
 async function getToken() {
   const clientCredentials = await fetch(
-    `https://id.twitch.tv/oauth2/token?client_id=${process.env.TWITCH_CLIENT_ID}&client_secret=${process.env.TWITCH_CLIENT_SECRET}&grant_type=client_credentials`,
+    `https://id.twitch.tv/oauth2/token?client_id=${
+      Deno.env.get("TWITCH_CLIENT_ID")
+    }&client_secret=${
+      Deno.env.get("TWITCH_CLIENT_SECRET")
+    }&grant_type=client_credentials`,
     {
       method: "POST",
     },
@@ -34,16 +36,7 @@ async function getToken() {
   }
 }
 
-const readlineInterface = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout,
-});
-readlineInterface.question(
-  "Enter the User whose Data you want to retrieve: ",
-  async (user) => {
-    await getToken();
-    const userData = await getUser(user.toLowerCase());
-    console.log(userData);
-    readlineInterface.close();
-  },
-);
+const user = prompt("Enter the User whose Data you want to retrieve: ");
+await getToken();
+const userData = await getUser(user.toLowerCase());
+console.log(userData);

@@ -1,9 +1,8 @@
-import process from "node:process";
 import { getUser as getUserImpl } from "./utils.ts";
 
 async function getUser(tokens, login) {
   return await getUserImpl(
-    process.env.TWITCH_CLIENT_ID,
+    Deno.env.get("TWITCH_CLIENT_ID"),
     tokens.access_token,
     login,
   );
@@ -25,7 +24,9 @@ export default async function getAccountAccess(chatter) {
     user_id: null,
   };
   const dcf = await fetch(
-    `https://id.twitch.tv/oauth2/device?client_id=${process.env.TWITCH_CLIENT_ID}&scopes=${scopes}`,
+    `https://id.twitch.tv/oauth2/device?client_id=${
+      Deno.env.get("TWITCH_CLIENT_ID")
+    }&scopes=${scopes}`,
     {
       method: "POST",
     },
@@ -42,7 +43,9 @@ export default async function getAccountAccess(chatter) {
   }
   const dcfInterval = setInterval(async () => {
     const tokenResponse = await fetch(
-      `https://id.twitch.tv/oauth2/token?client_id=${process.env.TWITCH_CLIENT_ID}&scopes=${
+      `https://id.twitch.tv/oauth2/token?client_id=${
+        Deno.env.get("TWITCH_CLIENT_ID")
+      }&scopes=${
         encodeURIComponent(scopes)
       }&device_code=${tokens.device_code}&grant_type=urn:ietf:params:oauth:grant-type:device_code`,
       {

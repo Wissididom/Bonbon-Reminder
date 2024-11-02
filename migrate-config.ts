@@ -1,48 +1,51 @@
-import fs from "node:fs";
-import process from "node:process";
-import readline from "node:readline";
+async function fileExists(path: string) {
+  try {
+    await Deno.lstat(path);
+    return true;
+  } catch (err) {
+    if (err instanceof Deno.errors.NotFound) {
+      return false;
+    } else {
+      throw err;
+    }
+  }
+}
 
-function readConfigIfExists(filePath) {
-  if (fs.existsSync(filePath)) {
-    return JSON.parse(fs.readFileSync(filePath));
+async function readConfigIfExists(filePath: string) {
+  if (fileExists(filePath)) {
+    return JSON.parse(Deno.readTextFile(filePath));
   } else {
     return [];
   }
 }
 
-function runMigration(cron) {
+async function runMigration(cron: string) {
   const configObject = {
-    channelIds: process.env.TWITCH_CHANNEL_IDS.split(","),
+    channelIds: Deno.env.get("TWITCH_CHANNEL_IDS").split(","),
     cron: cron,
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-    senderId: process.env.SENDER_ID,
-    textMessage: process.env.TEXT_MESSAGE,
+    senderId: Deno.env.get("SENDER_ID"),
+    textMessage: Deno.env.get("TEXT_MESSAGE"),
   };
 
-  const config = readConfigIfExists(".config.json");
+  const config = await readConfigIfExists(".config.json");
 
   config.push(configObject);
 
-  fs.writeFileSync(".config.json", JSON.stringify(config, null, 2) + "\n");
+  Deno.writeTextFile(".config.json", JSON.stringify(config, null, 2) + "\n");
   console.log(JSON.stringify(config, null, 2) + "\n");
 
   const newEnv = `TWITCH_CLIENT_ID=${
-    process.env.TWITCH_CLIENT_ID ?? "[0-9a-z]"
-  }\nTWITCH_CLIENT_SECRET=${process.env.TWITCH_CLIENT_SECRET ?? "[0-9a-z]"}\n`;
+    Deno.env.get("TWITCH_CLIENT_ID") ?? "[0-9a-z]"
+  }\nTWITCH_CLIENT_SECRET=${
+    Deno.env.get("TWITCH_CLIENT_SECRET") ?? "[0-9a-z]"
+  }\n`;
 
-  fs.writeFileSync(".env", newEnv);
+  Deno.writeTextFile(".env", newEnv);
   console.log(newEnv);
 }
 
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout,
-});
-
-rl.question(
+const cron = prompt(
   "Please enter the cron expression you want to have it run as:\n",
-  (cron) => {
-    rl.close();
-    runMigration(cron);
-  },
 );
+await runMigration(cron);
