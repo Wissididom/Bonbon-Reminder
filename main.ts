@@ -1,6 +1,4 @@
-import "dotenv/config";
-import fs from "node:fs";
-import cron from "node-cron";
+import { schedule } from "node-cron";
 
 let token = {
   access_token: null,
@@ -9,8 +7,12 @@ let token = {
 };
 
 // https://dev.twitch.tv/docs/api/reference/#send-chat-message
-async function sendMessage(broadcasterId, senderId, message) {
-  let data = {
+async function sendMessage(
+  broadcasterId: string,
+  senderId: string,
+  message: string,
+) {
+  const data = {
     broadcaster_id: broadcasterId,
     sender_id: senderId,
     message,
@@ -19,7 +21,7 @@ async function sendMessage(broadcasterId, senderId, message) {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token.access_token}`,
-      "Client-ID": process.env.TWITCH_CLIENT_ID,
+      "Client-ID": Deno.env.get("TWITCH_CLIENT_ID")!,
       "Content-Type": "application/json",
     },
     body: JSON.stringify(data),
@@ -30,7 +32,9 @@ async function sendMessage(broadcasterId, senderId, message) {
     // 403 Forbidden = The sender is not permitted to send chat messages to the broadcaster’s chat room.
     // 422 = The message is too large
     console.log(
-      `${res.status}: ${senderId} -> ${broadcasterId}\n${JSON.stringify(await res.json(), null, 2)}`,
+      `${res.status}: ${senderId} -> ${broadcasterId}\n${
+        JSON.stringify(await res.json(), null, 2)
+      }`,
     );
     if (res.status >= 200 && res.status < 300) {
       return true;
@@ -40,16 +44,24 @@ async function sendMessage(broadcasterId, senderId, message) {
   });
 }
 
-async function handleReminder(channelIds, senderId, textMessage) {
+async function handleReminder(
+  channelIds: string[],
+  senderId: string,
+  textMessage: string,
+) {
   // https://dev.twitch.tv/docs/authentication/getting-tokens-oauth/#client-credentials-grant-flow
-  let clientCredentials = await fetch(
-    `https://id.twitch.tv/oauth2/token?client_id=${process.env.TWITCH_CLIENT_ID}&client_secret=${process.env.TWITCH_CLIENT_SECRET}&grant_type=client_credentials`,
+  const clientCredentials = await fetch(
+    `https://id.twitch.tv/oauth2/token?client_id=${
+      Deno.env.get("TWITCH_CLIENT_ID")
+    }&client_secret=${
+      Deno.env.get("TWITCH_CLIENT_SECRET")
+    }&grant_type=client_credentials`,
     {
       method: "POST",
     },
   );
   if (clientCredentials.status >= 200 && clientCredentials.status < 300) {
-    let clientCredentialsJson = await clientCredentials.json();
+    const clientCredentialsJson = await clientCredentials.json();
     token = {
       access_token: clientCredentialsJson.access_token,
       expires_in: clientCredentialsJson.expires_in,
@@ -61,11 +73,11 @@ async function handleReminder(channelIds, senderId, textMessage) {
   }
 }
 
-const config = JSON.parse(fs.readFileSync(".config.json"));
+const config = JSON.parse(await Deno.readTextFile(".config.json"));
 
-for (let reminder of config) {
+for (const reminder of config) {
   console.log("Schedule job: " + JSON.stringify(reminder));
-  cron.schedule(
+  schedule(
     reminder.cron,
     async () => {
       await handleReminder(
