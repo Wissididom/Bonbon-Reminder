@@ -13,7 +13,7 @@ async function fileExists(path: string) {
 
 async function readConfigIfExists(filePath: string) {
   if (fileExists(filePath)) {
-    return JSON.parse(Deno.readTextFile(filePath));
+    return JSON.parse(await Deno.readTextFile(filePath));
   } else {
     return [];
   }
