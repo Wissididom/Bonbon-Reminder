@@ -12,7 +12,7 @@ async function fileExists(path: string) {
 }
 
 async function readConfigIfExists(filePath: string) {
-  if (fileExists(filePath)) {
+  if (await fileExists(filePath)) {
     return JSON.parse(await Deno.readTextFile(filePath));
   } else {
     return [];
@@ -21,7 +21,7 @@ async function readConfigIfExists(filePath: string) {
 
 async function runMigration(cron: string) {
   const configObject = {
-    channelIds: Deno.env.get("TWITCH_CHANNEL_IDS").split(","),
+    channelIds: Deno.env.get("TWITCH_CHANNEL_IDS")!.split(","),
     cron: cron,
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     senderId: Deno.env.get("SENDER_ID"),
@@ -48,4 +48,8 @@ async function runMigration(cron: string) {
 const cron = prompt(
   "Please enter the cron expression you want to have it run as:\n",
 );
-await runMigration(cron);
+if (cron) {
+  console.log("Running migration...");
+  await runMigration(cron);
+  console.log("Successfully ran migration");
+}
