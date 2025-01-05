@@ -1,0 +1,12 @@
+services:
+  bonbon-reminder:
+    image: "ghcr.io/wissididom/bonbon-reminder"
+    restart: unless-stopped
+    volumes:
+      - type: bind
+        source: ./.config.json
+        target: /app/.config.json
+        read_only: true
+    environment:
+      NODE_ENV: production
+    env_file: .env
