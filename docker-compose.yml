@@ -1,0 +1,7 @@
+services:
+  chatsettingschecker:
+    image: "ghcr.io/wissididom/bonbon-reminder"
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+    env_file: .env
