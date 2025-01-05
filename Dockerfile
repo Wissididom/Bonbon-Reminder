@@ -6,4 +6,4 @@ COPY deno.lock .
 RUN deno install
 COPY . .
 RUN deno cache main.ts
-CMD ["run", "-EN", "main.ts"]
+CMD ["run", "-ERN", "main.ts"]
