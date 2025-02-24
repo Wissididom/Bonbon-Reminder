@@ -78,7 +78,7 @@ jobs:
         run: mv release-artifacts/Bonbon-Reminder release-artifacts/Bonbon-Reminder-Mac
 
       - name: Create release
-        uses: ncipollo/release-action@v1.15.0
+        uses: ncipollo/release-action@v1.16.0
         with:
           replacesArtifacts: true
           allowUpdates: true
