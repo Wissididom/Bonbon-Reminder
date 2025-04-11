@@ -16,6 +16,7 @@ async function sendMessage(
     broadcaster_id: broadcasterId,
     sender_id: senderId,
     message,
+    for_source_only: false,
   };
   return await fetch("https://api.twitch.tv/helix/chat/messages", {
     method: "POST",
