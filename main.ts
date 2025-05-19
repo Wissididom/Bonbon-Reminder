@@ -88,7 +88,6 @@ for (const reminder of config) {
       );
     },
     {
-      scheduled: true,
       timezone: reminder.timezone,
     },
   );
