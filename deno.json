@@ -3,6 +3,6 @@
     "dev": "deno run --watch main.ts"
   },
   "imports": {
-    "node-cron": "npm:node-cron@^3.0.3"
+    "node-cron": "npm:node-cron@^4.0.5"
   }
 }
