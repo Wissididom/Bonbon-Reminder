@@ -1,5 +1,5 @@
 export function checkEnv() {
-  if (hasEnv) return;
+  if (hasEnv()) return;
   throw new Deno.errors.InvalidData(
     "TWITCH_CLIENT_ID and TWITCH_CLIENT_SECRET env vars are required",
   );
