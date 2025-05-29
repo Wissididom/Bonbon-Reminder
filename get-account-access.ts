@@ -1,6 +1,7 @@
-import { getUser as getUserImpl } from "./utils.ts";
+import { checkEnv, getUser as getUserImpl } from "./utils.ts";
 
 async function getUser(access_token: string, login: string | null) {
+  checkEnv();
   return await getUserImpl(
     Deno.env.get("TWITCH_CLIENT_ID")!,
     access_token,
@@ -9,6 +10,7 @@ async function getUser(access_token: string, login: string | null) {
 }
 
 export default async function getAccountAccess(chatter: boolean) {
+  checkEnv();
   let scopes: string;
   if (chatter) {
     scopes = encodeURIComponent(["user:write:chat", "user:bot"].join(" "));

@@ -1,6 +1,7 @@
-import { getUser as getUserImpl } from "./utils.ts";
+import { checkEnv, getUser as getUserImpl } from "./utils.ts";
 
 async function getUser(access_token: string, login: string | null) {
+  checkEnv();
   return await getUserImpl(
     Deno.env.get("TWITCH_CLIENT_ID")!,
     access_token,
@@ -9,6 +10,7 @@ async function getUser(access_token: string, login: string | null) {
 }
 
 async function getToken() {
+  checkEnv();
   const clientCredentials = await fetch(
     `https://id.twitch.tv/oauth2/token?client_id=${
       Deno.env.get("TWITCH_CLIENT_ID")
@@ -32,6 +34,7 @@ async function getToken() {
 }
 
 async function handle() {
+  checkEnv();
   const user = prompt("Enter the User whose Data you want to retrieve: ");
   if (!user) {
     // Probably cancelled prompt, I guess
