@@ -1,4 +1,4 @@
-FROM denoland/deno:2.4.0
+FROM denoland/deno:2.4.1
 WORKDIR /app
 USER deno
 COPY deno.json .
