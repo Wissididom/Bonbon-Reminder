@@ -1,16 +1,16 @@
 {
   "version": "5",
   "specifiers": {
-    "npm:node-cron@^4.1.0": "4.1.0"
+    "npm:node-cron@^4.2.1": "4.2.1"
   },
   "npm": {
-    "node-cron@4.1.0": {
-      "integrity": "sha512-OS+3ORu+h03/haS6Di8Qr7CrVs4YaKZZOynZwQpyPZDnR3tqRbwJmuP2gVR16JfhLgyNlloAV1VTrrWlRogCFA=="
+    "node-cron@4.2.1": {
+      "integrity": "sha512-lgimEHPE/QDgFlywTd8yTR61ptugX3Qer29efeyWw2rv259HtGBNn1vZVmp8lB9uo9wC0t/AT4iGqXxia+CJFg=="
     }
   },
   "workspace": {
     "dependencies": [
-      "npm:node-cron@^4.1.0"
+      "npm:node-cron@^4.2.1"
     ]
   }
 }
