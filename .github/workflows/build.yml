@@ -50,7 +50,7 @@ jobs:
         name: Checkout Code
 
       # Windows
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         name: Download Windows
         with:
           name: Bonbon-Reminder-windows-latest
@@ -59,7 +59,7 @@ jobs:
       - name: Rename Windows Binary
         run: mv release-artifacts/Bonbon-Reminder.exe release-artifacts/Bonbon-Reminder-Windows.exe
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         name: Download Linux
         with:
           name: Bonbon-Reminder-ubuntu-latest
@@ -68,7 +68,7 @@ jobs:
       - name: Rename Linux Binary
         run: mv release-artifacts/Bonbon-Reminder release-artifacts/Bonbon-Reminder-Linux
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         name: Download Mac
         with:
           name: Bonbon-Reminder-macos-latest
