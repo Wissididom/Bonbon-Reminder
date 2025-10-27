@@ -30,13 +30,13 @@ jobs:
           deno compile -ERWN main.ts
       - name: Upload artifact (Windows)
         if: startsWith(matrix.os, 'windows')
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: Bonbon-Reminder-${{ matrix.os }}
           path: Bonbon-Reminder.exe
       - name: Upload artifact (Ubuntu and Mac)
         if: startsWith(matrix.os, 'ubuntu') || startsWith(matrix.os, 'macos')
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: Bonbon-Reminder-${{ matrix.os }}
           path: Bonbon-Reminder
