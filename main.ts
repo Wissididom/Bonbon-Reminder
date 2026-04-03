@@ -7,7 +7,7 @@ let token = {
 };
 
 // https://dev.twitch.tv/docs/api/reference/#send-chat-message
-async function sendMessage(
+async function sendChatMessage(
   broadcasterId: string,
   senderId: string,
   message: string,
@@ -45,10 +45,50 @@ async function sendMessage(
   });
 }
 
+// https://dev.twitch.tv/docs/api/reference/#send-chat-announcement
+async function sendChatAnnouncement(
+  broadcasterId: string,
+  senderId: string,
+  message: string,
+  color: string | undefined,
+) {
+  const data = {
+    message,
+    color,
+    for_source_only: false,
+  };
+  return await fetch(
+    `https://api.twitch.tv/helix/chat/announcements?broadcaster_id=${broadcasterId}&moderator_id=${senderId}`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token.access_token}`,
+        "Client-ID": Deno.env.get("TWITCH_CLIENT_ID")!,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    },
+  ).then(async (res) => {
+    // 204 No Content = Successfully sent the announcement
+    // 400 Bad Request
+    // 401 Unauthorized
+    // 429 Too Many Requests = The sender has exceeded the number of announcements they may send to this broadcaster_id within a given window.
+    console.log(
+      `${res.status}: ${senderId} -> ${broadcasterId}\n${await res.text()}`,
+    );
+    if (res.status >= 200 && res.status < 300) {
+      return true;
+    } else {
+      return false;
+    }
+  });
+}
+
 async function handleReminder(
   channelIds: string[],
   senderId: string,
   textMessage: string,
+  useAnnouncements: boolean = false,
 ) {
   // https://dev.twitch.tv/docs/authentication/getting-tokens-oauth/#client-credentials-grant-flow
   const clientCredentials = await fetch(
@@ -70,7 +110,11 @@ async function handleReminder(
     };
   }
   for (let i = 0; i < channelIds.length; i++) {
-    await sendMessage(channelIds[i], senderId, textMessage);
+    if (useAnnouncements) {
+      await sendChatAnnouncement(channelIds[i], senderId, textMessage);
+    } else {
+      await sendChatMessage(channelIds[i], senderId, textMessage);
+    }
   }
 }
 
@@ -85,6 +129,7 @@ for (const reminder of config) {
         reminder.channelIds,
         reminder.senderId,
         reminder.textMessage,
+        reminder.useAnnouncements ?? false,
       );
     },
     {
