@@ -9,11 +9,22 @@ async function getUser(access_token: string, login: string | null) {
   );
 }
 
-export default async function getAccountAccess(chatter: boolean) {
+export default async function getAccountAccess(
+  chatter: boolean,
+  announcements: boolean = true,
+) {
   checkEnv();
   let scopes: string;
   if (chatter) {
-    scopes = encodeURIComponent(["user:write:chat", "user:bot"].join(" "));
+    if (announcements) {
+      scopes = encodeURIComponent(
+        ["user:write:chat", "user:bot", "moderator:manage:announcements"].join(
+          " ",
+        ),
+      );
+    } else {
+      scopes = encodeURIComponent(["user:write:chat", "user:bot"].join(" "));
+    }
   } else {
     scopes = encodeURIComponent(["channel:bot"].join(" "));
   }
