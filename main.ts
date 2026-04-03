@@ -50,7 +50,7 @@ async function sendChatAnnouncement(
   broadcasterId: string,
   senderId: string,
   message: string,
-  color: string | undefined,
+  color: string | undefined = undefined,
 ) {
   const data = {
     message,
