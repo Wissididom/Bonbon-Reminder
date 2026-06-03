@@ -2,10 +2,6 @@
 
 A Twitch bot reminder tool that sends scheduled chat messages and announcements using Twitch's app access tokens.
 
-## Migration to Go
-
-This project has been migrated from Deno/TypeScript to Go while maintaining **exact functional parity**:
-
 ### Key Features
 - **Cron scheduling**: Schedule reminders at specific times and timezones
 - **Chat messages**: Send regular messages to Twitch chat
@@ -72,13 +68,6 @@ docker-compose up
 ```bash
 docker build -t bonbon-reminder .
 ```
-
-## Migration Notes
-
-- **Cron Format**: Automatically converts 6-field cron expressions (node-cron format) to 5-field (Go cron format) by removing the seconds field
-- **Dependencies**: Replaced `node-cron` with `github.com/robfig/cron/v3` and `dotenv` with `github.com/joho/godotenv`
-- **Binary Size**: Single executable, no runtime dependencies required
-- **Performance**: Improved startup time and lower memory footprint compared to Deno runtime
 
 ## API Reference
 
