@@ -202,7 +202,7 @@ func main() {
 	log.SetFlags(log.Lshortfile)
 
 	if len(os.Args) < 2 {
-		fmt.Fprintf(os.Stderr, "Usage: %s [chatter|streamer] [--with-announcements]\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "Usage: %s [chatter|streamer]\n", os.Args[0])
 		os.Exit(1)
 	}
 
@@ -210,7 +210,7 @@ func main() {
 	chatter := mode == "chatter"
 	announcements := false
 
-	if len(os.Args) > 2 && os.Args[2] == "--with-announcements" {
+	if chatter && promptBool("Do you want to be able to send announcements?") {
 		announcements = true
 	}
 

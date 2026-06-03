@@ -60,9 +60,7 @@ jobs:
       - name: Build
         run: |
           mkdir compiled
-          go build -o compiled/get-chatter-access-${{ matrix.os }}${{ matrix.suffix }} cmd/get-chatter-access.go
-          go build -o compiled/get-streamer-access-${{ matrix.os }}${{ matrix.suffix }} cmd/get-streamer-access.go
-          go build -o compiled/get-user-by-name-${{ matrix.os }}${{ matrix.suffix }} cmd/get-user-by-name.go
+          go build -o compiled/get-account-access-${{ matrix.os }}${{ matrix.suffix }} cmd/get-account-access.go
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
