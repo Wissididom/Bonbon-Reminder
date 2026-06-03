@@ -9,5 +9,4 @@ FROM alpine:latest
 RUN apk --no-cache add ca-certificates
 WORKDIR /app
 COPY --from=builder /build/bonbon-reminder .
-COPY .config.json .
 CMD ["./bonbon-reminder"]
