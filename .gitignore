@@ -1,3 +1,12 @@
 .env
 .config.json
 node_modules/
+deno.json
+deno.lock
+main.ts
+utils.ts
+get-*.ts
+migrate-config.ts
+bonbon-reminder
+*.exe
+dist/
