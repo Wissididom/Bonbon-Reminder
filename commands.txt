@@ -1,5 +1,6 @@
-deno run --env -ERWN main.ts
-deno run --env -EN get-streamer-access.ts
-deno run --env -EN get-chatter-access.ts
-deno run --env -EN get-user-by-name.ts
-deno run --env -EN migrate-config.ts
+./bonbon-reminder
+./get-account-access chatter [--with-announcements]
+./get-account-access streamer
+./get-chatter-access
+./get-streamer-access
+./get-user-by-name [username]
