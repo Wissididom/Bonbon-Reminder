@@ -1,6 +1,0 @@
-./bonbon-reminder
-./get-account-access chatter [--with-announcements]
-./get-account-access streamer
-./get-chatter-access
-./get-streamer-access
-./get-user-by-name [username]
