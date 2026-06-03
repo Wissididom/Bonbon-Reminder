@@ -7,6 +7,4 @@ services:
         source: ./.config.json
         target: /app/.config.json
         read_only: true
-    environment:
-      NODE_ENV: production
     env_file: .env
