@@ -18,11 +18,11 @@ jobs:
         os: ["ubuntu-latest", "macos-latest", "windows-latest"]
         include:
           - os: ubuntu-latest
-            output: bonbon-reminder
+            output: Bonbon-Reminder-Linux
           - os: macos-latest
-            output: bonbon-reminder
+            output: Bonbon-Reminder-Mac
           - os: windows-latest
-            output: bonbon-reminder.exe
+            output: Bonbon-Reminder-Windows.exe
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -35,7 +35,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
-          name: bonbon-reminder-${{ matrix.os }}
+          name: Bonbon-Reminder-${{ matrix.os }}
           path: ${{ matrix.output }}
   build-helpers:
     name: Build Helpers
@@ -45,11 +45,11 @@ jobs:
         os: ["ubuntu-latest", "macos-latest", "windows-latest"]
         include:
           - os: ubuntu-latest
-            suffix: ""
+            output: get-account-access-Linux
           - os: macos-latest
-            suffix: ""
+            output: get-account-access-Mac
           - os: windows-latest
-            suffix: ".exe"
+            output: get-account-access-Windows.exe
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -60,7 +60,7 @@ jobs:
       - name: Build
         run: |
           mkdir compiled
-          go build -o compiled/get-account-access-${{ matrix.os }}${{ matrix.suffix }} cmd/get-account-access.go
+          go build -o compiled/${{ matrix.output }} cmd/get-account-access.go
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
@@ -76,49 +76,10 @@ jobs:
         name: Checkout Code
 
       - uses: actions/download-artifact@v8
-        name: Download Windows
+        name: Download artifacts
         with:
-          name: bonbon-reminder-windows-latest
           path: release-artifacts/
-
-      - name: Rename Windows Binary
-        run: mv release-artifacts/bonbon-reminder.exe release-artifacts/bonbon-reminder-Windows.exe
-
-      - uses: actions/download-artifact@v8
-        name: Download Linux
-        with:
-          name: bonbon-reminder-ubuntu-latest
-          path: release-artifacts/
-
-      - name: Rename Linux Binary
-        run: mv release-artifacts/bonbon-reminder release-artifacts/bonbon-reminder-Linux
-
-      - uses: actions/download-artifact@v8
-        name: Download Mac
-        with:
-          name: bonbon-reminder-macos-latest
-          path: release-artifacts/
-
-      - name: Rename Mac Binary
-        run: mv release-artifacts/bonbon-reminder release-artifacts/bonbon-reminder-Mac
-
-      - uses: actions/download-artifact@v8
-        name: Download Windows Helper
-        with:
-          name: helpers-windows-latest
-          path: release-artifacts/
-
-      - uses: actions/download-artifact@v8
-        name: Download Linux Helper
-        with:
-          name: helpers-ubuntu-latest
-          path: release-artifacts/
-
-      - uses: actions/download-artifact@v8
-        name: Download Mac Helper
-        with:
-          name: helpers-macos-latest
-          path: release-artifacts/
+          merge-multiple: true
 
       - name: Create release
         uses: ncipollo/release-action@v1.21.0
