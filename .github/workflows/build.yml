@@ -1,7 +1,7 @@
 name: Go Build
 
 permissions:
-  "contents": "write"
+  contents: "read"
 
 on:
   push:
@@ -25,15 +25,17 @@ jobs:
             output: Bonbon-Reminder-Windows.exe
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Setup Go
-        uses: actions/setup-go@v7
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: "1.26.3"
       - name: Build
         run: go build -o ${{ matrix.output }} .
       - name: Upload artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: Bonbon-Reminder-${{ matrix.os }}
           path: ${{ matrix.output }}
@@ -52,9 +54,11 @@ jobs:
             output: get-account-access-Windows.exe
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Setup Go
-        uses: actions/setup-go@v7
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: "1.26.3"
       - name: Build
@@ -62,27 +66,31 @@ jobs:
           mkdir compiled
           go build -o compiled/${{ matrix.output }} cmd/get-account-access.go
       - name: Upload artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: helpers-${{ matrix.os }}
           path: compiled
   create-release:
     needs: [build, build-helpers]
+    permissions:
+      contents: "write"
     runs-on: ubuntu-latest
     if: (github.event_name == 'push' && github.ref == 'refs/heads/main')
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         name: Checkout Code
+        with:
+          persist-credentials: false
 
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         name: Download artifacts
         with:
           path: release-artifacts/
           merge-multiple: true
 
       - name: Create release
-        uses: ncipollo/release-action@v1.21.0
+        uses: ncipollo/release-action@339a81892b84b4eeb0f6e744e4574d79d0d9b8dd # v1.21.0
         with:
           replacesArtifacts: true
           allowUpdates: true
